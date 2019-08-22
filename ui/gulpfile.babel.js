@@ -17,7 +17,7 @@ import cp from 'child_process';
 import webpack from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
-import env from 'gulp-env';
+import minimist from 'minimist';
 import config from './config';
 
 const paths = {
@@ -157,7 +157,7 @@ gulp.task('watch', cb => {
 gulp.task('set-env', () => {
   // Only use localhost if WF_SERVER is not set
   const wfServer = process.env.WF_SERVER || 'http://localhost:8080/api/';
-  env({
+  minimist({
     vars: {
       WF_SERVER: wfServer
     }
