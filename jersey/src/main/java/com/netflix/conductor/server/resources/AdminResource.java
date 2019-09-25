@@ -20,7 +20,8 @@ import com.netflix.conductor.common.metadata.tasks.Task;
 import com.netflix.conductor.service.AdminService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-
+import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
@@ -32,8 +33,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Map;
+import org.apache.log4j.Level;
+
+
+import static java.lang.String.format;
+
 
 /**
  * @author Viren
@@ -80,4 +84,15 @@ public class AdminResource {
         return adminService.requeueSweep(workflowId);
 	}
 
+	@ApiOperation(value = "adjust logging on the fly.")
+	@GET
+	@Consumes(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/config/log/{logger}/{level}")
+	public String setLog(
+			@PathParam("logger") String logger,
+			@PathParam("level") String lvl) {
+		org.apache.log4j.Logger.getLogger(logger).setLevel(Level.toLevel(lvl));
+		return format("set logger %s to %s", logger, lvl);
+	}
 }
