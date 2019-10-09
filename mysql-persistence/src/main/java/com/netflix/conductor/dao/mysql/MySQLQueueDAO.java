@@ -20,6 +20,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+import static java.util.concurrent.TimeUnit.*;
+
 @Singleton
 public class MySQLQueueDAO extends MySQLBaseDAO implements QueueDAO {
     private static final Long UNACK_SCHEDULE_MS = 60_000L;
@@ -28,9 +32,8 @@ public class MySQLQueueDAO extends MySQLBaseDAO implements QueueDAO {
     public MySQLQueueDAO(ObjectMapper om, DataSource ds) {
         super(om, ds);
 
-        Executors.newSingleThreadScheduledExecutor()
-                .scheduleAtFixedRate(this::processAllUnacks,
-                        UNACK_SCHEDULE_MS, UNACK_SCHEDULE_MS, TimeUnit.MILLISECONDS);
+        newSingleThreadScheduledExecutor()
+                .scheduleAtFixedRate(this::processAllUnacks, UNACK_SCHEDULE_MS, UNACK_SCHEDULE_MS, MILLISECONDS);
         logger.debug(MySQLQueueDAO.class.getName() + " is ready to serve");
     }
 
@@ -192,7 +195,8 @@ public class MySQLQueueDAO extends MySQLBaseDAO implements QueueDAO {
     private void pushMessage(Connection connection, String queueName, String messageId, String payload, Integer priority,
                              long offsetTimeInSecond) {
 
-        String PUSH_MESSAGE = "INSERT INTO queue_message (deliver_on, queue_name, message_id, priority, offset_time_seconds, payload) VALUES (TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP), ?, ?,?,?,?) ON DUPLICATE KEY UPDATE payload=VALUES(payload), deliver_on=VALUES(deliver_on)";
+        String PUSH_MESSAGE = "INSERT INTO queue_message (deliver_on, queue_name, message_id, priority, offset_time_seconds, payload)" +
+                " VALUES (TIMESTAMPADD(SECOND,?,CURRENT_TIMESTAMP), ?, ?,?,?,?) ON DUPLICATE KEY UPDATE payload=VALUES(payload), deliver_on=VALUES(deliver_on)";
 
         createQueueIfNotExists(connection, queueName);
 
@@ -234,7 +238,7 @@ public class MySQLQueueDAO extends MySQLBaseDAO implements QueueDAO {
         List<Message> messages = peekMessages(connection, queueName, count);
 
         while (messages.size() < count && ((System.currentTimeMillis() - start) < timeout)) {
-            Uninterruptibles.sleepUninterruptibly(200, TimeUnit.MILLISECONDS);
+            Uninterruptibles.sleepUninterruptibly(200, MILLISECONDS);
             messages = peekMessages(connection, queueName, count);
         }
 

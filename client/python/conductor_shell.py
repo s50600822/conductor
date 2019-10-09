@@ -30,11 +30,11 @@ def main():
         if len(sys.argv) < 5:
             print('python conductor server_url start workflow_name input_json [version] [correlationId]')
             return None
-        wfName = sys.argv[3]
+        wf_name = sys.argv[3]
         input = json.loads(sys.argv[4])
-        workflowId = wfc.startWorkflow(wfName, input, 1, None)
-        print(workflowId)
-        return workflowId
+        workflow_id = wfc.startWorkflow(wf_name, input, 1, None)
+        print(workflow_id)
+        return workflow_id
     elif command == 'get':
         if len(sys.argv) < 4:
             print('python conductor server_url get workflow_id')

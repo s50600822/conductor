@@ -38,7 +38,6 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -47,13 +46,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import javax.inject.Inject;
@@ -80,17 +78,30 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
-import org.elasticsearch.search.sort.FieldSortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+import static com.netflix.conductor.dao.es5.index.query.parser.Expression.fromString;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.elasticsearch.index.query.QueryBuilders.boolQuery;
+import static org.elasticsearch.index.query.QueryBuilders.existsQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.queryStringQuery;
+import static org.elasticsearch.index.query.QueryBuilders.rangeQuery;
+import static org.elasticsearch.index.query.QueryBuilders.termQuery;
+import static org.elasticsearch.search.sort.SortBuilders.fieldSort;
+import static org.elasticsearch.search.sort.SortOrder.ASC;
+import static org.elasticsearch.search.sort.SortOrder.valueOf;
 
 /**
  * @author Viren
@@ -364,7 +375,7 @@ public class ElasticSearchDAOV5 implements IndexDAO {
         } catch (Exception e) {
             List<String> taskIds = taskExecLogs.stream()
                 .map(TaskExecLog::getTaskId)
-                .collect(Collectors.toList());
+                .collect(toList());
             logger.error("Failed to index task execution logs for tasks: {}", taskIds, e);
         }
     }
@@ -377,23 +388,18 @@ public class ElasticSearchDAOV5 implements IndexDAO {
     @Override
     public List<TaskExecLog> getTaskExecutionLogs(String taskId) {
         try {
-            Expression expression = Expression.fromString("taskId='" + taskId + "'");
-            QueryBuilder queryBuilder = expression.getFilterBuilder();
+            QueryBuilder queryBuilder = fromString("taskId='" + taskId + "'").getFilterBuilder();
 
-            BoolQueryBuilder filterQuery = QueryBuilders.boolQuery().must(queryBuilder);
-            QueryStringQueryBuilder stringQuery = QueryBuilders.queryStringQuery("*");
-            BoolQueryBuilder fq = QueryBuilders.boolQuery().must(stringQuery).must(filterQuery);
+            BoolQueryBuilder filterQuery = boolQuery().must(queryBuilder);
+            BoolQueryBuilder fq = boolQuery().must(queryStringQuery("*")).must(filterQuery);
+            SearchResponse response =  elasticSearchClient.prepareSearch(logIndexPrefix + "*")
+                    .setQuery(fq)
+                    .setTypes(LOG_DOC_TYPE)
+                    .addSort(fieldSort("createdTime").order(ASC))
+                    .execute()
+                    .actionGet();
 
-            FieldSortBuilder sortBuilder = SortBuilders.fieldSort("createdTime")
-                .order(SortOrder.ASC);
-            final SearchRequestBuilder srb = elasticSearchClient.prepareSearch(logIndexPrefix + "*")
-                .setQuery(fq)
-                .setTypes(LOG_DOC_TYPE)
-                .addSort(sortBuilder);
-
-            SearchResponse response = srb.execute().actionGet();
-
-            return Arrays.stream(response.getHits().getHits())
+            return stream(response.getHits().getHits())
                 .map(hit -> {
                     String source = hit.getSourceAsString();
                     try {
@@ -403,8 +409,8 @@ public class ElasticSearchDAOV5 implements IndexDAO {
                     }
                     return null;
                 })
-                .filter(taskExecLog -> Objects.nonNull(taskExecLog))
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .collect(toList());
         } catch (Exception e) {
             logger.error("Failed to get task execution logs for task: {}", taskId, e);
         }
@@ -524,7 +530,7 @@ public class ElasticSearchDAOV5 implements IndexDAO {
         UpdateRequest request = new UpdateRequest(indexName, WORKFLOW_DOC_TYPE, workflowInstanceId);
         Map<String, Object> source = IntStream.range(0, keys.length)
             .boxed()
-            .collect(Collectors.toMap(i -> keys[i], i -> values[i]));
+            .collect(toMap(i -> keys[i], i -> values[i]));
         request.doc(source);
         logger.debug("Updating workflow {} with {}", workflowInstanceId, source);
         new RetryUtil<>().retryOnException(
@@ -565,15 +571,15 @@ public class ElasticSearchDAOV5 implements IndexDAO {
     private SearchResult<String> search(String indexName, String structuredQuery, int start, int size,
         List<String> sortOptions, String freeTextQuery, String docType) {
         try {
-            QueryBuilder queryBuilder = QueryBuilders.matchAllQuery();
+            QueryBuilder queryBuilder = matchAllQuery();
             if (StringUtils.isNotEmpty(structuredQuery)) {
-                Expression expression = Expression.fromString(structuredQuery);
+                Expression expression = fromString(structuredQuery);
                 queryBuilder = expression.getFilterBuilder();
             }
 
-            BoolQueryBuilder filterQuery = QueryBuilders.boolQuery().must(queryBuilder);
-            QueryStringQueryBuilder stringQuery = QueryBuilders.queryStringQuery(freeTextQuery);
-            BoolQueryBuilder fq = QueryBuilders.boolQuery().must(stringQuery).must(filterQuery);
+            BoolQueryBuilder filterQuery = boolQuery().must(queryBuilder);
+            QueryStringQueryBuilder stringQuery = queryStringQuery(freeTextQuery);
+            BoolQueryBuilder fq = boolQuery().must(stringQuery).must(filterQuery);
             final SearchRequestBuilder srb = elasticSearchClient.prepareSearch(indexName)
                     .setQuery(fq)
                     .setTypes(docType)
@@ -589,7 +595,7 @@ public class ElasticSearchDAOV5 implements IndexDAO {
 
             LinkedList<String> result = StreamSupport.stream(response.getHits().spliterator(), false)
                     .map(SearchHit::getId)
-                    .collect(Collectors.toCollection(LinkedList::new));
+                    .collect(toCollection(LinkedList::new));
             long count = response.getHits().getTotalHits();
 
             return new SearchResult<String>(count, result);
@@ -600,29 +606,29 @@ public class ElasticSearchDAOV5 implements IndexDAO {
 
     private void addSortOptionToSearchRequest(SearchRequestBuilder searchRequestBuilder,
         String sortOption) {
-        SortOrder order = SortOrder.ASC;
+        SortOrder order = ASC;
         String field = sortOption;
         int indx = sortOption.indexOf(':');
         if (indx > 0) {    // Can't be 0, need the field name at-least
             field = sortOption.substring(0, indx);
-            order = SortOrder.valueOf(sortOption.substring(indx + 1));
+            order = valueOf(sortOption.substring(indx + 1));
         }
         searchRequestBuilder.addSort(field, order);
     }
 
     @Override
     public List<String> searchArchivableWorkflows(String indexName, long archiveTtlDays) {
-        QueryBuilder q = QueryBuilders.boolQuery()
-            .should(QueryBuilders.termQuery("status", "COMPLETED"))
-            .should(QueryBuilders.termQuery("status", "FAILED"))
-            .should(QueryBuilders.termQuery("status", "TIMED_OUT"))
-            .should(QueryBuilders.termQuery("status", "TERMINATED"))
-            .mustNot(QueryBuilders.existsQuery("archived"))
+        QueryBuilder q = boolQuery()
+            .should(termQuery("status", "COMPLETED"))
+            .should(termQuery("status", "FAILED"))
+            .should(termQuery("status", "TIMED_OUT"))
+            .should(termQuery("status", "TERMINATED"))
+            .mustNot(existsQuery("archived"))
             .minimumShouldMatch(1);
         SearchRequestBuilder s = elasticSearchClient.prepareSearch(indexName)
             .setTypes("workflow")
             .setQuery(q)
-            .addSort("endTime", SortOrder.ASC)
+            .addSort("endTime", ASC)
             .setSize(archiveSearchBatchSize);
 
         SearchResponse response = s.execute().actionGet();
@@ -630,48 +636,48 @@ public class ElasticSearchDAOV5 implements IndexDAO {
         SearchHits hits = response.getHits();
         logger.info("Archive search totalHits - {}", hits.getTotalHits());
 
-        return Arrays.stream(hits.getHits())
+        return stream(hits.getHits())
             .map(hit -> hit.getId())
-            .collect(Collectors.toCollection(LinkedList::new));
+            .collect(toCollection(LinkedList::new));
     }
 
     @Override
     public List<String> searchRecentRunningWorkflows(int lastModifiedHoursAgoFrom,
         int lastModifiedHoursAgoTo) {
         DateTime dateTime = new DateTime();
-        QueryBuilder q = QueryBuilders.boolQuery()
-            .must(QueryBuilders.rangeQuery("updateTime")
+        QueryBuilder q = boolQuery()
+            .must(rangeQuery("updateTime")
                 .gt(dateTime.minusHours(lastModifiedHoursAgoFrom)))
-            .must(QueryBuilders.rangeQuery("updateTime")
+            .must(rangeQuery("updateTime")
                 .lt(dateTime.minusHours(lastModifiedHoursAgoTo)))
-            .must(QueryBuilders.termQuery("status", "RUNNING"));
+            .must(termQuery("status", "RUNNING"));
 
         SearchRequestBuilder s = elasticSearchClient.prepareSearch(indexName)
             .setTypes("workflow")
             .setQuery(q)
             .setSize(5000)
-            .addSort("updateTime", SortOrder.ASC);
+            .addSort("updateTime", ASC);
 
         SearchResponse response = s.execute().actionGet();
         return StreamSupport.stream(response.getHits().spliterator(), false)
             .map(hit -> hit.getId())
-            .collect(Collectors.toCollection(LinkedList::new));
+            .collect(toCollection(LinkedList::new));
     }
 
     @Override
     public List<Message> getMessages(String queue) {
         try {
-            Expression expression = Expression.fromString("queue='" + queue + "'");
+            Expression expression = fromString("queue='" + queue + "'");
             QueryBuilder queryBuilder = expression.getFilterBuilder();
 
-            BoolQueryBuilder filterQuery = QueryBuilders.boolQuery().must(queryBuilder);
-            QueryStringQueryBuilder stringQuery = QueryBuilders.queryStringQuery("*");
-            BoolQueryBuilder fq = QueryBuilders.boolQuery().must(stringQuery).must(filterQuery);
+            BoolQueryBuilder filterQuery = boolQuery().must(queryBuilder);
+            QueryStringQueryBuilder stringQuery = queryStringQuery("*");
+            BoolQueryBuilder fq = boolQuery().must(stringQuery).must(filterQuery);
 
             final SearchRequestBuilder srb = elasticSearchClient.prepareSearch(logIndexPrefix + "*")
                     .setQuery(fq)
                     .setTypes(MSG_DOC_TYPE)
-                    .addSort(SortBuilders.fieldSort("created").order(SortOrder.ASC));
+                    .addSort(fieldSort("created").order(ASC));
 
             return mapGetMessagesResponse(srb.execute().actionGet());
         } catch (Exception e) {
@@ -697,17 +703,17 @@ public class ElasticSearchDAOV5 implements IndexDAO {
     @Override
     public List<EventExecution> getEventExecutions(String event) {
         try {
-            Expression expression = Expression.fromString("event='" + event + "'");
+            Expression expression = fromString("event='" + event + "'");
             QueryBuilder queryBuilder = expression.getFilterBuilder();
 
-            BoolQueryBuilder filterQuery = QueryBuilders.boolQuery().must(queryBuilder);
-            QueryStringQueryBuilder stringQuery = QueryBuilders.queryStringQuery("*");
-            BoolQueryBuilder fq = QueryBuilders.boolQuery().must(stringQuery).must(filterQuery);
+            BoolQueryBuilder filterQuery = boolQuery().must(queryBuilder);
+            QueryStringQueryBuilder stringQuery = queryStringQuery("*");
+            BoolQueryBuilder fq = boolQuery().must(stringQuery).must(filterQuery);
 
             final SearchRequestBuilder srb = elasticSearchClient.prepareSearch(logIndexPrefix + "*")
                     .setQuery(fq).setTypes(EVENT_DOC_TYPE)
-                    .addSort(SortBuilders.fieldSort("created")
-                            .order(SortOrder.ASC));
+                    .addSort(fieldSort("created")
+                            .order(ASC));
 
             return mapEventExecutionsResponse(srb.execute().actionGet());
         } catch (Exception e) {

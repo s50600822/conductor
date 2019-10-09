@@ -15,6 +15,7 @@ import java.lang.annotation.Target;
 import java.util.Optional;
 
 
+import static com.netflix.conductor.common.metadata.workflow.TaskType.*;
 import static com.netflix.conductor.core.execution.tasks.Terminate.getTerminationStatusParameter;
 import static com.netflix.conductor.core.execution.tasks.Terminate.validateInputStatus;
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
@@ -51,28 +52,28 @@ public @interface WorkflowTaskTypeConstraint {
 
             // depending on task type check if required parameters are set or not
             switch (workflowTask.getType()) {
-                case TaskType.TASK_TYPE_EVENT:
+                case TASK_TYPE_EVENT:
                     valid = isEventTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_DECISION:
+                case TASK_TYPE_DECISION:
                     valid = isDecisionTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_DYNAMIC:
+                case TASK_TYPE_DYNAMIC:
                     valid = isDynamicTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_FORK_JOIN_DYNAMIC:
+                case TASK_TYPE_FORK_JOIN_DYNAMIC:
                     valid = isDynamicForkJoinValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_HTTP:
+                case TASK_TYPE_HTTP:
                     valid = isHttpTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_FORK_JOIN:
+                case TASK_TYPE_FORK_JOIN:
                     valid = isForkJoinTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_TERMINATE:
+                case TASK_TYPE_TERMINATE:
                     valid = isTerminateTaskValid(workflowTask, context);
                     break;
-                case TaskType.TASK_TYPE_KAFKA_PUBLISH:
+                case TASK_TYPE_KAFKA_PUBLISH:
                     valid = isKafkaPublishTaskValid(workflowTask, context);
                     break;
             }
@@ -83,7 +84,7 @@ public @interface WorkflowTaskTypeConstraint {
         private boolean isEventTaskValid(WorkflowTask workflowTask, ConstraintValidatorContext context) {
             boolean valid = true;
             if (workflowTask.getSink() == null){
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "sink", TaskType.TASK_TYPE_EVENT, workflowTask.getName());
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "sink", TASK_TYPE_EVENT, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
@@ -93,19 +94,19 @@ public @interface WorkflowTaskTypeConstraint {
         private boolean isDecisionTaskValid(WorkflowTask workflowTask, ConstraintValidatorContext context) {
             boolean valid = true;
             if (workflowTask.getCaseValueParam() == null && workflowTask.getCaseExpression() == null){
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "caseValueParam or caseExpression", TaskType.DECISION,
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "caseValueParam or caseExpression", DECISION,
                     workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
             if (workflowTask.getDecisionCases() == null) {
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "decisionCases", TaskType.DECISION, workflowTask.getName());
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "decisionCases", DECISION, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
             else if ((workflowTask.getDecisionCases() != null || workflowTask.getCaseExpression() != null) &&
                 (workflowTask.getDecisionCases().size() == 0)){
-                String message = String.format("decisionCases should have atleast one task for taskType: %s taskName: %s", TaskType.DECISION, workflowTask.getName());
+                String message = String.format("decisionCases should have atleast one task for taskType: %s taskName: %s", DECISION, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
@@ -115,7 +116,7 @@ public @interface WorkflowTaskTypeConstraint {
         private boolean isDynamicTaskValid(WorkflowTask workflowTask, ConstraintValidatorContext context) {
             boolean valid = true;
             if (workflowTask.getDynamicTaskNameParam() == null){
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicTaskNameParam", TaskType.DYNAMIC, workflowTask.getName());
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicTaskNameParam", DYNAMIC, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
@@ -130,7 +131,7 @@ public @interface WorkflowTaskTypeConstraint {
             // Both are not allowed.
             if (workflowTask.getDynamicForkJoinTasksParam() != null &&
                     (workflowTask.getDynamicForkTasksParam() != null || workflowTask.getDynamicForkTasksInputParamName() != null)) {
-                String message = String.format("dynamicForkJoinTasksParam or combination of dynamicForkTasksInputParamName and dynamicForkTasksParam cam be used for taskType: %s taskName: %s", TaskType.FORK_JOIN_DYNAMIC, workflowTask.getName());
+                String message = String.format("dynamicForkJoinTasksParam or combination of dynamicForkTasksInputParamName and dynamicForkTasksParam cam be used for taskType: %s taskName: %s", FORK_JOIN_DYNAMIC, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 return false;
             }
@@ -139,12 +140,12 @@ public @interface WorkflowTaskTypeConstraint {
                 return valid;
             } else {
                 if (workflowTask.getDynamicForkTasksParam() == null) {
-                    String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicForkTasksParam", TaskType.FORK_JOIN_DYNAMIC, workflowTask.getName());
+                    String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicForkTasksParam", FORK_JOIN_DYNAMIC, workflowTask.getName());
                     context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                     valid = false;
                 }
                 if (workflowTask.getDynamicForkTasksInputParamName() == null) {
-                    String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicForkTasksInputParamName", TaskType.FORK_JOIN_DYNAMIC, workflowTask.getName());
+                    String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "dynamicForkTasksInputParamName", FORK_JOIN_DYNAMIC, workflowTask.getName());
                     context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                     valid = false;
                 }
@@ -170,7 +171,7 @@ public @interface WorkflowTaskTypeConstraint {
             }
 
             if (!(isInputParameterSet || isInputTemplateSet)) {
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "inputParameters.http_request", TaskType.HTTP, workflowTask.getName());
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "inputParameters.http_request", HTTP, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
@@ -182,7 +183,7 @@ public @interface WorkflowTaskTypeConstraint {
             boolean valid = true;
 
              if (workflowTask.getForkTasks() != null && (workflowTask.getForkTasks().size() == 0)){
-                String message = String.format("forkTasks should have atleast one task for taskType: %s taskName: %s", TaskType.FORK_JOIN, workflowTask.getName());
+                String message = String.format("forkTasks should have atleast one task for taskType: %s taskName: %s", FORK_JOIN, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }
@@ -223,7 +224,7 @@ public @interface WorkflowTaskTypeConstraint {
             }
 
             if (!(isInputParameterSet || isInputTemplateSet)) {
-                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "inputParameters.kafka_request", TaskType.KAFKA_PUBLISH, workflowTask.getName());
+                String message = String.format(PARAM_REQUIRED_STRING_FORMAT, "inputParameters.kafka_request", KAFKA_PUBLISH, workflowTask.getName());
                 context.buildConstraintViolationWithTemplate(message).addConstraintViolation();
                 valid = false;
             }

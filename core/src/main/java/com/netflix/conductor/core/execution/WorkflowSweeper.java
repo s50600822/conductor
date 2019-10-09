@@ -18,11 +18,14 @@
  */
 package com.netflix.conductor.core.execution;
 
+import com.google.common.collect.ImmutableSet;
+import com.netflix.conductor.common.run.Workflow;
 import com.netflix.conductor.core.WorkflowContext;
 import com.netflix.conductor.core.config.Configuration;
 import com.netflix.conductor.core.execution.ApplicationException.Code;
 import com.netflix.conductor.dao.QueueDAO;
 import com.netflix.conductor.metrics.Monitors;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +38,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author Viren
@@ -130,5 +136,26 @@ public class WorkflowSweeper {
 		for (Future<?> future : futures) {
 			future.get();
 		}
+	}
+
+	private static class PotentialStuckWorkflow {}
+	private static final Set<PotentialStuckWorkflow> potentialStaleWF = ImmutableSet.of(
+			new PotentialStuckWorkflow("transfer-asset-workflow", 6)
+	);
+	private void health(final WorkflowExecutor workflowExecutor) {
+		potentialStaleWF.stream()
+				.map(wf -> getStaleWorkflow(workflowExecutor, wf.workflow, wf.version))
+				.forEach(wfs ->
+						wfs.forEach(staleWorkflow -> workflowExecutor.decide(staleWorkflow.getWorkflowId()))
+				);
+	}
+	private List<Workflow> getStaleWorkflow(
+			final WorkflowExecutor workflowExecutor,
+			final String workflowName,
+			final int version){
+		return workflowExecutor.getRunningWorkflows(workflowName,version)
+				.stream()
+				.filter(this::allTaskCompleted)
+				.collect(toList());
 	}
 }

@@ -13,7 +13,8 @@ The API and storage layers are pluggable and provide ability to work with differ
 Follow the steps below to quickly bring up a local Conductor instance backed by an in-memory database with a simple kitchen sink workflow that demonstrate all the capabilities of Conductor.
 
 !!!warning:
-	In-Memory server is meant for a quick demonstration purpose and does not store the data on disk.  All the data is lost once the server dies.
+	In-Memory server is meant for a quick demonstration purpose and does not store the data on disk. 
+	 All the data is lost once the server dies.
 
 #### Checkout the source from github
 

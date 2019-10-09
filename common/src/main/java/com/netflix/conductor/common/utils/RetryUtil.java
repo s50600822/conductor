@@ -34,6 +34,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+
+import static com.github.rholder.retry.BlockStrategies.*;
+import static com.github.rholder.retry.StopStrategies.*;
+import static java.lang.String.format;
+
 /**
  * Utility class that deals with retries in case of transient failures.
  *
@@ -98,13 +103,12 @@ public class RetryUtil<T> {
                         WaitStrategies.exponentialWait(1000, 90, TimeUnit.SECONDS),
                         WaitStrategies.randomWait(100, TimeUnit.MILLISECONDS, 500, TimeUnit.MILLISECONDS)
                 ))
-                .withStopStrategy(StopStrategies.stopAfterAttempt(retryCount))
-                .withBlockStrategy(BlockStrategies.threadSleepStrategy())
+                .withStopStrategy(stopAfterAttempt(retryCount))
+                .withBlockStrategy(threadSleepStrategy())
                 .withRetryListener(new RetryListener() {
                     @Override
                     public <V> void onRetry(Attempt<V> attempt) {
-                        logger.debug("Attempt # {}, {} millis since first attempt. Operation: {}, description:{}",
-                                attempt.getAttemptNumber(), attempt.getDelaySinceFirstAttempt(), operationName, shortDescription);
+                        logger.debug("Attempt # {}, {} millis since first attempt. Operation: {}, description:{}", attempt.getAttemptNumber(), attempt.getDelaySinceFirstAttempt(), operationName, shortDescription);
                         internalNumberOfRetries.incrementAndGet();
                     }
                 })
@@ -113,13 +117,12 @@ public class RetryUtil<T> {
         try {
             return retryer.call(supplierCommand::get);
         } catch (ExecutionException executionException) {
-            String errorMessage = String.format("Operation '%s:%s' failed for the %d time in RetryUtil", operationName,
+            String errorMessage = format("Operation '%s:%s' failed for the %d time in RetryUtil", operationName,
                     shortDescription, internalNumberOfRetries.get());
             logger.debug(errorMessage);
             throw new RuntimeException(errorMessage, executionException.getCause());
         } catch (RetryException retryException) {
-            String errorMessage = String.format("Operation '%s:%s' failed after retrying %d times, retry limit %d", operationName,
-                    shortDescription, internalNumberOfRetries.get(), 3);
+            String errorMessage = format("Operation '%s:%s' failed after retrying %d times, retry limit %d", operationName, shortDescription, internalNumberOfRetries.get(), 3);
             logger.debug(errorMessage, retryException.getLastFailedAttempt().getExceptionCause());
             throw new RuntimeException(errorMessage, retryException.getLastFailedAttempt().getExceptionCause());
         }

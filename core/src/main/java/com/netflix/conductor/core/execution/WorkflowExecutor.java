@@ -435,8 +435,7 @@ public class WorkflowExecutor {
         // Get tasks that are in progress and have callbackAfterSeconds > 0
         // and set the callbackAfterSeconds to 0;
         for (Task task : workflow.getTasks()) {
-            if (task.getStatus().equals(IN_PROGRESS) &&
-                    task.getCallbackAfterSeconds() > 0) {
+            if (task.getStatus().equals(IN_PROGRESS) && task.getCallbackAfterSeconds() > 0) {
                 if (queueDAO.setOffsetTime(QueueUtils.getQueueName(task), task.getTaskId(), 0)) {
                     task.setCallbackAfterSeconds(0);
                     executionDAOFacade.updateTask(task);
@@ -846,12 +845,12 @@ public class WorkflowExecutor {
                         break;
                 };
                 return null;
-            }, null, null, 2, updateTaskQueueDesc, taskQueueOperation);
+            }, null, null, task.getRetryCount(), updateTaskQueueDesc, taskQueueOperation);
 
             new RetryUtil<>().retryOnException(() -> {
                 executionDAOFacade.updateTask(task);
                 return null;
-            }, null, null, 2, updateTaskDesc, updateTaskOperation);
+            }, null, null, task.getRetryCount(), updateTaskDesc, updateTaskOperation);
 
             //If the task has failed update the failed task reference name in the workflow.
             //This gives the ability to look at workflow and see what tasks have failed at a high level.

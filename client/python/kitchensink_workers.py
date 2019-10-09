@@ -5,7 +5,10 @@ def execute(task):
     return {'status': 'COMPLETED', 'output': {'mod': 5, 'taskToExecute': 'task_1', 'oddEven': 0}, 'logs': ['one','two']}
 
 def execute4(task):
-    forkTasks = [{"name": "task_1", "taskReferenceName": "task_1_1", "type": "SIMPLE"},{"name": "sub_workflow_4", "taskReferenceName": "wf_dyn", "type": "SUB_WORKFLOW", "subWorkflowParam": {"name": "sub_flow_1"}}];
+    forkTasks = [{"name": "task_1", "taskReferenceName": "task_1_1", "type": "SIMPLE"},
+                 {"name": "task_2", "taskReferenceName": "task_1_2", "type": "SIMPLE"},
+                 {"name": "task_3", "taskReferenceName": "task_1_3", "type": "SIMPLE"},
+                 {"name": "sub_workflow_4", "taskReferenceName": "wf_dyn", "type": "SUB_WORKFLOW", "subWorkflowParam": {"name": "sub_flow_1"}}                 ]
     input = {'task_1_1': {}, 'wf_dyn': {}}
     return {'status': 'COMPLETED', 'output': {'mod': 5, 'taskToExecute': 'task_1', 'oddEven': 0, 'dynamicTasks': forkTasks, 'inputs': input}, 'logs': ['one','two']}
 

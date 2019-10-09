@@ -126,7 +126,10 @@ public class SystemTaskWorkerCoordinator {
 			//noinspection InfiniteLoopStatement
 			for(;;) {
 				String workflowSystemTaskQueueName = queue.poll(60, TimeUnit.SECONDS);
-				if (workflowSystemTaskQueueName != null && !listeningTaskQueues.contains(workflowSystemTaskQueueName) && shouldListen(workflowSystemTaskQueueName)) {
+				if (workflowSystemTaskQueueName != null
+						&& !listeningTaskQueues.contains(workflowSystemTaskQueueName)
+						&& shouldListen(workflowSystemTaskQueueName)
+				) {
 					listen(workflowSystemTaskQueueName);
 					listeningTaskQueues.add(workflowSystemTaskQueueName);
 				}

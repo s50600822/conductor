@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netflix.conductor.client.task.WorkflowTaskMetrics.getPollTimer;
 import static com.netflix.conductor.client.task.WorkflowTaskMetrics.incrementTaskPollCount;
+import static java.util.Optional.ofNullable;
 
 /**
  * Manages the Task workers thread pool and server communication (poll, task update and acknowledgement).
@@ -257,7 +258,7 @@ public class WorkflowTaskCoordinator {
 
 		logger.info("Initialized the worker with {} threads", threadCount);
 
-        this.workerQueue = new LinkedBlockingQueue<Runnable>(workerQueueSize);
+        this.workerQueue = new LinkedBlockingQueue<>(workerQueueSize);
         AtomicInteger count = new AtomicInteger(0);
 		this.executorService = new ThreadPoolExecutor(threadCount, threadCount,
                 0L, TimeUnit.MILLISECONDS,
@@ -308,7 +309,7 @@ public class WorkflowTaskCoordinator {
 			return;
 		}
 
-		String domain = Optional.ofNullable(PropertyFactory.getString(worker.getTaskDefName(), DOMAIN, null))
+		String domain = ofNullable(PropertyFactory.getString(worker.getTaskDefName(), DOMAIN, null))
 				.orElse(PropertyFactory.getString(ALL_WORKERS, DOMAIN, null));
 
 		logger.debug("Polling {}, domain={}, count = {} timeout = {} ms", worker.getTaskDefName(), domain, worker.getPollCount(), worker.getLongPollTimeoutInMS());
