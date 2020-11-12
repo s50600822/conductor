@@ -37,7 +37,7 @@ RUN git clone https://github.com/Netflix/conductor.git \
   && mv ./ui /app \
 
   # Install UI packages
-  && cd /app/ui \
+  && cd /app/ui && rm -rfv package-lock.json \
   && npm install \
   && npm run build --server \
 
