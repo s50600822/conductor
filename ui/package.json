@@ -76,7 +76,7 @@
     "babel-preset-stage-2": "^6.3.13",
     "babel-register": "^6.26.0",
     "babelify": "^7.2.0",
-    "browser-sync": "^2.9.1",
+    "browser-sync": "^2.26.13",
     "browserify": "^12.0.1",
     "chai": "^3.2.0",
     "cssnano": "^3.0.0",
@@ -87,7 +87,7 @@
     "eslint-plugin-react": "^7.5.1",
     "gulp": "^4.0.2",
     "gulp-babel": "^6.1.1",
-    "gulp-eslint": "^5.0.0",
+    "gulp-eslint": "^5.0.0",`
     "gulp-gh-pages": "^0.5.4",
     "gulp-html-replace": "^1.5.1",
     "gulp-notify": "^2.2.0",
