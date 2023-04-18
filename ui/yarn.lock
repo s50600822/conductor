@@ -9304,10 +9304,10 @@ react-app-polyfill@^3.0.0:
     regenerator-runtime "^0.13.9"
     whatwg-fetch "^3.6.2"
 
-react-cron-generator@^1.3.5:
-  version "1.3.11"
-  resolved "https://registry.yarnpkg.com/react-cron-generator/-/react-cron-generator-1.3.11.tgz#2149193ead38b00f60baf8af6e5344488ec44043"
-  integrity sha512-NJ1GzqzUIjB9G3ikH6ehZeGWe6JYmIW3Wa4QqJpHGeiLPOE6jw6/WMl5WTRVCa2IcLl2wFWmnGdbQkdOyIrjvQ==
+react-cron-generator@^1.3.13:
+  version "1.3.13"
+  resolved "https://registry.yarnpkg.com/react-cron-generator/-/react-cron-generator-1.3.13.tgz#ca92c9c676ba64fd544854a454abcb4f9f0bef23"
+  integrity sha512-qVL0FhaA1DE83wgAo1ySbJPZFggEASbgJcL0Au7vDKs5bsL0/q08Ahtrii61cMQ6CFbIoH9HiHBr7RL4ucAYGQ==
   dependencies:
     cronstrue "^2.11.0"
 
