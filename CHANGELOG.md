@@ -131,6 +131,7 @@ Changes to configurations:
 | workflow.executor.service.max.threads | conductor.app.executorServiceMaxThreadCount | 50 |
 | decider.sweep.frequency.seconds | conductor.app.sweepFrequency | 30s |
 | workflow.sweeper.thread.count | conductor.app.sweeperThreadCount | 5 |
+| - | conductor.app.sweeperWorkflowPollTimeout | 2000ms |
 | workflow.event.processor.thread.count | conductor.app.eventProcessorThreadCount | 2 |
 | workflow.event.message.indexing.enabled | conductor.app.eventMessageIndexingEnabled | true |
 | workflow.event.execution.indexing.enabled | conductor.app.eventExecutionIndexingEnabled | true |
@@ -354,6 +355,7 @@ Changes to configurations:
 | workflow.default.event.processor.enabled | conductor.default-event-processor.enabled | true |
 | workflow.events.default.queue.type | conductor.default-event-queue.type | sqs |
 | workflow.status.listener.type | conductor.workflow-status-listener.type | stub |
+| - | conductor.task-status-listener.type | stub |
 | workflow.decider.locking.server | conductor.workflow-execution-lock.type | noop_lock |
 |  |  |  |
 | workflow.default.event.queue.enabled | conductor.event-queues.default.enabled | true |

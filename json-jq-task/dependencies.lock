@@ -74,7 +74,7 @@
                 "com.netflix.conductor:conductor-common",
                 "com.netflix.conductor:conductor-core"
             ],
-            "locked": "3.13.0"
+            "locked": "3.21.7"
         },
         "com.jayway.jsonpath:json-path": {
             "firstLevelTransitive": [
@@ -189,6 +189,12 @@
                 "com.netflix.conductor:conductor-core"
             ],
             "locked": "2.17.2"
+        },
+        "org.openjdk.nashorn:nashorn-core": {
+            "firstLevelTransitive": [
+                "com.netflix.conductor:conductor-core"
+            ],
+            "locked": "15.4"
         }
     },
     "testCompileClasspath": {
@@ -270,7 +276,7 @@
                 "com.netflix.conductor:conductor-common",
                 "com.netflix.conductor:conductor-core"
             ],
-            "locked": "3.13.0"
+            "locked": "3.21.7"
         },
         "com.jayway.jsonpath:json-path": {
             "firstLevelTransitive": [
@@ -391,6 +397,12 @@
         },
         "org.junit.vintage:junit-vintage-engine": {
             "locked": "5.8.2"
+        },
+        "org.openjdk.nashorn:nashorn-core": {
+            "firstLevelTransitive": [
+                "com.netflix.conductor:conductor-core"
+            ],
+            "locked": "15.4"
         },
         "org.springframework.boot:spring-boot-starter-log4j2": {
             "locked": "2.7.3"
