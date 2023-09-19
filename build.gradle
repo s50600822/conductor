@@ -159,7 +159,7 @@ allprojects {
             events = ["SKIPPED", "FAILED"]
             exceptionFormat = "full"
             displayGranularity = 1
-            showStandardStreams = true
+            showStandardStreams = false
 //            include = ["com.netflix.conductor.es6.dao.index.TestElasticSearchRestDAOV6"]
         }
     }
