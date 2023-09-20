@@ -96,7 +96,6 @@ public class WorkflowCreationTests {
     }
 
     private ConductorWorkflow<TestWorkflowInput> registerTestWorkflow() {
-        InputStream script = getClass().getResourceAsStream("/script.js");
         SimpleTask getUserInfo = new SimpleTask("get_user_info", "get_user_info");
         getUserInfo.input("name", ConductorWorkflow.input.get("name"));
 
@@ -121,7 +120,7 @@ public class WorkflowCreationTests {
                 .variables(new WorkflowState())
                 .timeoutPolicy(WorkflowDef.TimeoutPolicy.TIME_OUT_WF, 100)
                 .defaultInput(defaultInput)
-                .add(new Javascript("js", script))
+                .add(selectAlternativeTask())
                 .add(new ForkJoin("parallel", parallelTasks))
                 .add(getUserInfo)
                 .add(
@@ -209,5 +208,28 @@ public class WorkflowCreationTests {
             fail("execution should have failed");
         } catch (Exception e) {
         }
+    }
+
+    /**
+     * Assuming server situation is the same as test client, util further solution. Note that: - in
+     * this ci, server is downloaded from prebuilt artifact(different commit) - in reality server
+     * can be on different runtime JVM and different version of conductor
+     */
+    private boolean javascriptEngineNotAvailable() {
+        // Nashorn was removed since JDK 15
+        // and org.openjdk.nashorn:nashorn-core:15.4 is not bundled in conductor-server
+        // note that adding the jar into runtime classpath (java -cp ... ) won't work
+        // spring classloader will simply ignore the extra jars
+        // much less include it in client/test classpath
+        return true;
+    }
+
+    /** assume this codebase won't go back from jdk 17 */
+    private Task selectAlternativeTask() {
+        if (javascriptEngineNotAvailable()) {
+            return new SimpleTask("task2", "jsTaskAlternative");
+        }
+        final InputStream script = getClass().getResourceAsStream("/script.js");
+        return new Javascript("js", script);
     }
 }

@@ -56,8 +56,8 @@ public class WorkflowTestRunner {
     }
 
     public void shutdown() {
-        localServerRunner.shutdown();
         annotatedWorkerExecutor.shutdown();
         workflowExecutor.shutdown();
+        localServerRunner.shutdown();
     }
 }
