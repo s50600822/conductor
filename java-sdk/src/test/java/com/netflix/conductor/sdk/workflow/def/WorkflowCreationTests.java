@@ -32,14 +32,23 @@ import com.netflix.conductor.common.metadata.tasks.TaskType;
 import com.netflix.conductor.common.metadata.workflow.WorkflowDef;
 import com.netflix.conductor.common.run.Workflow;
 import com.netflix.conductor.sdk.testing.WorkflowTestRunner;
-import com.netflix.conductor.sdk.workflow.def.tasks.*;
+import com.netflix.conductor.sdk.workflow.def.tasks.DynamicFork;
+import com.netflix.conductor.sdk.workflow.def.tasks.DynamicForkInput;
+import com.netflix.conductor.sdk.workflow.def.tasks.ForkJoin;
+import com.netflix.conductor.sdk.workflow.def.tasks.Javascript;
+import com.netflix.conductor.sdk.workflow.def.tasks.SimpleTask;
+import com.netflix.conductor.sdk.workflow.def.tasks.Switch;
+import com.netflix.conductor.sdk.workflow.def.tasks.Task;
 import com.netflix.conductor.sdk.workflow.executor.WorkflowExecutor;
 import com.netflix.conductor.sdk.workflow.task.InputParam;
 import com.netflix.conductor.sdk.workflow.task.OutputParam;
 import com.netflix.conductor.sdk.workflow.task.WorkerTask;
 import com.netflix.conductor.sdk.workflow.testing.TestWorkflowInput;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class WorkflowCreationTests {
 
@@ -96,7 +105,6 @@ public class WorkflowCreationTests {
     }
 
     private ConductorWorkflow<TestWorkflowInput> registerTestWorkflow() {
-        InputStream script = getClass().getResourceAsStream("/script.js");
         SimpleTask getUserInfo = new SimpleTask("get_user_info", "get_user_info");
         getUserInfo.input("name", ConductorWorkflow.input.get("name"));
 
@@ -121,7 +129,7 @@ public class WorkflowCreationTests {
                 .variables(new WorkflowState())
                 .timeoutPolicy(WorkflowDef.TimeoutPolicy.TIME_OUT_WF, 100)
                 .defaultInput(defaultInput)
-                .add(new Javascript("js", script))
+                .add(selectAlternativeTask())
                 .add(new ForkJoin("parallel", parallelTasks))
                 .add(getUserInfo)
                 .add(
@@ -209,5 +217,25 @@ public class WorkflowCreationTests {
             fail("execution should have failed");
         } catch (Exception e) {
         }
+    }
+
+    private boolean javascriptEngineNotAvailable() {
+        // Nashorn was removed since JDK 15
+        // and org.openjdk.nashorn:nashorn-core:15.4 is not bundled in conductor-server
+        // note that even adding the jar into runtime classpath (java -cp ... ) won't work
+        // spring classloader will simply ignore the extra jars
+        // much less include it in client/test classpath
+        // the only way to fix it, not only for test but prod
+        // is to bundle org.openjdk.nashorn:nashorn-core or any alternative engine.
+        return true;
+    }
+
+    /** assume this codebase won't go back from jdk 17 */
+    private Task selectAlternativeTask() {
+        if (javascriptEngineNotAvailable()) {
+            return new SimpleTask("task2", "jsTaskAlternative");
+        }
+        final InputStream script = getClass().getResourceAsStream("/script.js");
+        return new Javascript("js", script);
     }
 }
