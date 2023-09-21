@@ -41,7 +41,9 @@ jobs:
       - name: Print Server Logs
         if: always()
         run: |
-          cat conductor_tests.log
+          if [ -f conductor_tests.log ]; then
+            cat conductor_tests.log
+          fi
       - name: Publish server logs
         if: always()
         uses: actions/upload-artifact@v3
