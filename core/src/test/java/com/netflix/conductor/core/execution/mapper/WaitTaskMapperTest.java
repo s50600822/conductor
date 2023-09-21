@@ -142,7 +142,7 @@ public class WaitTaskMapperTest {
         List<TaskModel> mappedTasks = waitTaskMapper.getMappedTasks(taskMapperContext);
         assertEquals(1, mappedTasks.size());
         assertEquals(mappedTasks.get(0).getStatus(), TaskModel.Status.IN_PROGRESS);
-        assertEquals(mappedTasks.get(0).getCallbackAfterSeconds(), 0L);
+        assertEquals(0L, mappedTasks.get(0).getCallbackAfterSeconds());
     }
 
     @Test
