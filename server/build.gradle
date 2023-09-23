@@ -59,9 +59,12 @@ jar {
 
 bootJar {
     mainClass = 'com.netflix.conductor.Conductor'
-    classifier = 'boot'
+    archiveClassifier = 'boot'
 }
 
 springBoot {
     buildInfo()
 }
+
+compileJava.dependsOn(tasks.getByPath(':conductor-server:bootBuildInfo'))
+
