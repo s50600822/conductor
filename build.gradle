@@ -19,7 +19,7 @@ plugins {
     id 'java'
     id 'application'
     id 'jacoco'
-    id 'nebula.netflixoss' version '10.6.0'
+    id 'com.netflix.nebula.netflixoss' version '11.3.2'
     id 'org.sonarqube' version '3.4.0.2513'
 }
 
@@ -47,21 +47,28 @@ apply from: "$rootDir/dependencies.gradle"
 apply from: "$rootDir/springboot-bom-overrides.gradle"
 
 allprojects {
-    apply plugin: 'nebula.netflixoss'
+    apply plugin: 'com.netflix.nebula.netflixoss'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'java-library'
     apply plugin: 'project-report'
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-
+    java {
+        toolchain {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
     group = 'com.netflix.conductor'
 
     configurations.all {
+//        runtime.exclude group: "com.fasterxml.jackson", module: "jackson-bom"
+
         exclude group: 'ch.qos.logback', module: 'logback-classic'
         exclude group: 'ch.qos.logback', module: 'logback-core'
         exclude group: 'org.apache.logging.log4j', module: 'log4j-to-slf4j'
         exclude group: 'org.slf4j', module: 'slf4j-log4j12'
+        exclude group: 'com.fasterxml.jackson', module: 'jackson-bom'
     }
 
     repositories {
@@ -92,10 +99,28 @@ allprojects {
         imports {
             // dependency versions for the BOM can be found at https://docs.spring.io/spring-boot/docs/2.7.3/reference/htmlsingle/#appendix.dependency-versions
             mavenBom(SpringBootPlugin.BOM_COORDINATES)
+//            implementation('com.netflix.nebula:gradle-dependency-lock-plugin:13.2.0') {
+//                exclude group: 'com.fasterxml.jackson', module: 'jackson-bom'
+//            }
         }
     }
 
     dependencies {
+//        classpath('com.netflix.nebula:gradle-dependency-lock-plugin:13.2.0') {
+//            exclude group: 'com.fasterxml.jackson', module: 'jackson-bom' // For excluding baz from bar but not if brought elsewhere
+//        }
+//        classpath('com.netflix.nebula.netflixoss:com.netflix.nebula.netflixoss.gradle.plugin:11.2.0') {
+//            exclude group: 'com.fasterxml.jackson', module: 'jackson-bom' // For excluding baz from bar but not if brought elsewhere
+//        }
+//        classpath('com.netflix.nebula.netflixoss:com.netflix.nebula.netflixoss.gradle.plugin:11.2.0') {
+//            exclude group: 'com.netflix.nebula', module: 'gradle-dependency-lock-plugin' // For excluding baz from bar but not if brought elsewhere
+//        }
+
+//        api(platform("com.fasterxml.jackson:jackson-bom:2.13.3"))
+//        implementation('com.fasterxml.jackson:jackson-bom')version {
+//            prefer '2.13.3'
+//            strictly '[2.13.3]'
+//        }
         implementation('org.apache.logging.log4j:log4j-core') {
             version {
                 // this is the preferred version this library will use
