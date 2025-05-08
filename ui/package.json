@@ -30,8 +30,8 @@
     "react-is": "^17.0.2",
     "react-query": "^3.19.4",
     "react-resize-detector": "^5.2.0",
-    "react-router": "^5.2.0",
-    "react-router-dom": "^5.2.0",
+    "react-router": "^6.0.0",
+    "react-router-dom": "^6.0.0",
     "react-router-use-location-state": "^2.5.0",
     "react-scripts": "^5.0.1",
     "react-vis-timeline-2": "^2.1.6",
@@ -40,7 +40,7 @@
     "url-parse": "^1.5.1",
     "use-local-storage-state": "^10.0.0",
     "xss": "^1.0.8",
-    "yup": "^0.32.11"
+    "yup": "^1.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
